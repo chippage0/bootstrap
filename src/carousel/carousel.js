@@ -34,6 +34,11 @@ angular.module('ui.bootstrap.carousel', ['ui.bootstrap.transition'])
     function goNext() {
       // Scope has been destroyed, stop here.
       if (destroyed) { return; }
+  
+      // Support for transition-begin callbacks.
+      if (nextSlide.$element) { nextSlide.$element[0]._invokeEnteringTransitionBeginCallback(); }
+      if (self.currentSlide && self.currentSlide.$element) { self.currentSlide.$element[0]._invokeLeavingTransitionBeginCallback(); }
+        
       //If we have a slide to transition from and we have a transition type and we're allowed, go
       if (self.currentSlide && angular.isString(direction) && !$scope.noTransition && nextSlide.$element) {
         //We shouldn't do class manip in here, but it's the same weird thing bootstrap does. need to fix sometime
@@ -67,6 +72,10 @@ angular.module('ui.bootstrap.carousel', ['ui.bootstrap.transition'])
       angular.extend(next, {direction: '', active: true, leaving: false, entering: false});
       angular.extend(current||{}, {direction: '', active: false, leaving: false, entering: false});
       $scope.$currentTransition = null;
+      
+      // Support for transition-end callbacks:
+      if (nextSlide.$element) { next.$element[0]._invokeEnteringTransitionEndCallback(); }
+      if (current && current.$element) { current.$element[0]._invokeLeavingTransitionEndCallback(); }
     }
   };
   $scope.$on('$destroy', function () {
@@ -277,6 +286,23 @@ function CarouselDemoCtrl($scope) {
       active: '=?'
     },
     link: function (scope, element, attrs, carouselCtrl) {
+
+      // Support for transition begin/end  callbacks.
+      // Invoke the appropriate transition begin/end callback (if any callback expressions were given).
+      // The expression will be evaluated in the parent scope's context.
+      element[0]._invokeEnteringTransitionBeginCallback = function () {
+          if (attrs.onenteringtransitionbegin) { scope.$parent.$eval(attrs.onenteringtransitionbegin); }
+      };
+      element[0]._invokeEnteringTransitionEndCallback = function () {
+          if (attrs.onenteringtransitionend) { scope.$parent.$eval(attrs.onenteringtransitionend); }
+      };
+      element[0]._invokeLeavingTransitionBeginCallback = function () {
+          if (attrs.onleavingtransitionbegin) { scope.$parent.$eval(attrs.onleavingtransitionbegin); }
+      };
+      element[0]._invokeLeavingTransitionEndCallback = function () {
+          if (attrs.onleavingtransitionend) { scope.$parent.$eval(attrs.onleavingtransitionend); }
+      };
+ 
       carouselCtrl.addSlide(scope, element);
       //when the scope is destroyed then remove the slide from the current slides array
       scope.$on('$destroy', function() {

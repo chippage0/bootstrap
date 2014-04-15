@@ -263,6 +263,58 @@ describe('carousel', function() {
       expect($timeout.flush).toThrow('No deferred tasks to be flushed');
     });
 
+    it('should invoke the transition begin/end callbacks when transitioning to another slide', function () {
+
+        scope.slideEnteringBeganCount = 0;
+        scope.slideEnteringBegan = function slideEnteringBegan(theSlide) {
+            scope.slideEnteringBeganCount++;
+        };
+        scope.slideEnteringEndedCount = 0;
+        scope.slideEnteringEnded = function slideEnteringEnded(theSlide) {
+            scope.slideEnteringEndedCount++;
+        };
+
+        scope.slideLeavingBeganCount = 0;
+        scope.slideLeavingBegan = function slideLeavingBegan(theSlide) {
+            scope.slideLeavingBeganCount++;
+        };
+        scope.slideLeavingEndedCount = 0;
+        scope.slideLeavingEnded = function slideLeavingEnded(theSlide) {
+            scope.slideLeavingEndedCount++;
+        };
+
+
+        scope.$apply();
+        elm = $compile(
+            '<carousel interval="interval" no-transition="true">' +
+              '<slide ng-repeat="myslide in slides" active="slide.active" ' +
+              '       onenteringtransitionbegin="slideEnteringBegan(myslide)" onenteringtransitionend="slideEnteringEnded(myslide)" ' +
+              '       onleavingtransitionbegin="slideLeavingBegan(myslide)" onleavingtransitionend="slideLeavingEnded(myslide)"  >' +
+                '{{slide.content}}' +
+              '</slide>' +
+            '</carousel>'
+          )(scope);
+        scope.$apply();
+
+        var navNext = elm.find('a.right');
+
+        scope.slideEnteringBeganCount = scope.slideEnteringEndedCount = 0;
+        scope.slideLeavingBeganCount = scope.slideLeavingEndedCount = 0;
+        navNext.click();
+        expect(scope.slideEnteringBeganCount).toBe(1);
+        expect(scope.slideEnteringEndedCount).toBe(1);
+        expect(scope.slideLeavingBeganCount).toBe(1);
+        expect(scope.slideLeavingEndedCount).toBe(1);
+        navNext.click();
+        expect(scope.slideEnteringBeganCount).toBe(2);
+        expect(scope.slideEnteringEndedCount).toBe(2);
+        expect(scope.slideLeavingBeganCount).toBe(2);
+        expect(scope.slideLeavingEndedCount).toBe(2);
+    });
+
+
+
+
   });
 
   describe('controller', function() {
